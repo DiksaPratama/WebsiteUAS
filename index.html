@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Security Rinjani</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Inter", sans-serif;
+        background: #000;
+        overflow-x: hidden;
+      }
+
+      .weather-animation {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .rain-drop {
+        position: absolute;
+        top: -20px;
+        width: 2px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.4);
+        animation: rain-fall linear infinite;
+      }
+
+      @keyframes rain-fall {
+        to { transform: translateY(120vh); }
+      }
+
+      .sunny-cloud {
+        position: absolute;
+        width: 100%; height: 100%;
+        background: url("https://i.ibb.co/8MzL9vG/cloud.png") repeat-x;
+        background-size: contain;
+        animation: cloudFloat 60s linear infinite;
+        opacity: 0.4;
+        z-index: 1;
+        display: none;
+      }
+
+      @keyframes cloudFloat {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+      }
+
+      .stars {
+        position: absolute;
+        width: 100%; height: 100%;
+        background: transparent;
+        z-index: 1;
+        display: none;
+      }
+
+      .stars::before {
+        content: "";
+        position: absolute;
+        width: 100%; height: 100%;
+        box-shadow: 10px 20px white, 30px 60px white, 50px 90px white,
+                    80px 120px white, 100px 160px white, 140px 200px white;
+        animation: twinkle 2s infinite alternate;
+      }
+
+      @keyframes twinkle {
+        0% { opacity: 0.2; }
+        100% { opacity: 1; }
+      }
+
+      #loadingScreen {
+        position: fixed;
+        z-index: 9999;
+        background: #fff;
+        width: 100%; height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .loading-img {
+        width: 160px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .spinner {
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #1a73e8;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .overlay {
+        position: relative;
+        z-index: 2;
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("rinjani.jpg") no-repeat center center;
+        background-size: cover;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      h1 {
+        font-size: 32px;
+        text-align: center;
+        margin-bottom: 20px;
+        color: #ffffff;
+        text-shadow: 1px 1px 3px #000;
+        z-index: 3;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 16px;
+        max-width: 620px;
+        width: 100%;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        z-index: 3;
+      }
+
+      .card p {
+        font-size: 17px;
+        margin: 12px 0;
+        color: #f1f1f1;
+      }
+
+      .card p span {
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      .btn:hover { background-color: #0b7dda; }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+      }
+
+      .modal-content {
+        background-color: rgba(255, 255, 255, 0.95);
+        margin: 8% auto;
+        padding: 30px;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        color: #222;
+        position: relative;
+      }
+
+      .modal h2 { color: #1a73e8; }
+
+      .close {
+        position: absolute;
+        top: 12px;
+        right: 20px;
+        font-size: 26px;
+        cursor: pointer;
+        color: #444;
+      }
+
+      ul {
+        padding-left: 20px;
+        margin-top: 10px;
+      }
+
+      ul li {
+        margin-bottom: 10px;
+        font-size: 15px;
+      }
+
+      .reset-btn {
+        background-color: #d93025;
+        margin-top: 20px;
+      }
+
+      .reset-btn:hover {
+        background-color: #a52018;
+      }
+
+      @media (max-width: 600px) {
+        h1 { font-size: 26px; }
+        .card { padding: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loadingScreen">
+      <img src="rinjanilogo.jpeg" alt="Gunung Rinjani" class="loading-img" />
+      <div class="spinner"></div>
+      <p>Memuat data...</p>
+    </div>
+
+    <div class="overlay">
+      <div class="weather-animation" id="weatherEffect">
+        <div class="sunny-cloud" id="sunnyClouds"></div>
+        <div class="stars" id="starEffect"></div>
+        <div id="rainEffect"></div>
+      </div>
+
+      <h1>Selamat datang di website Smart Security Taman Nasional Gunung Rinjani</h1>
+      <div class="card" id="dataCard">
+        <p><strong>🌤️ Intensitas Cahaya:</strong> <span id="intensitas">-</span></p>
+        <p><strong>🌧️ Hujan:</strong> <span id="hujan">-</span></p>
+        <p><strong>🌬️ Kecepatan Angin (km/jam):</strong> <span id="angin">-</span></p>
+        <p><strong>🚧 Status Jalur Pendakian Segara Anak lintas Torean:</strong> <span id="status">-</span></p>
+        <p><strong>⚠️ Jumlah Pelanggaran:</strong> <span id="jumlah">-</span></p>
+        <p><strong>🕒 Pelanggaran Terakhir:</strong> <span id="terakhir">-</span></p>
+        <p><strong>🕓 Waktu Saat ini:</strong> <span id="waktuRealtime">-</span></p>
+        <p><strong>📅 Tanggal Saat ini:</strong> <span id="tanggalRealtime">-</span></p>
+        <button class="btn" onclick="showModal()">📋 Lihat Riwayat Pendaki Ilegal</button>
+      </div>
+    </div>
+
+    <div id="riwayatModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>📋 Riwayat Pendaki Ilegal</h2>
+        <ul id="riwayatList"><li>Memuat data...</li></ul>
+        <button class="btn reset-btn" onclick="resetRiwayat()">🗑️ Reset Riwayat</button>
+      </div>
+    </div>
+
+    <!-- Firebase JS SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyAK2nuqGZITBqzFJ-c7seqMhq74HlG0CJQ",
+        authDomain: "project2-2054e.firebaseapp.com",
+        databaseURL: "https://project2-2054e-default-rtdb.firebaseio.com",
+        projectId: "project2-2054e",
+        storageBucket: "project2-2054e.appspot.com",
+        messagingSenderId: "YOUR_ID",
+        appId: "YOUR_ID",
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      const loadingScreen = document.getElementById("loadingScreen");
+
+      db.ref("/data_pendakian").on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          document.getElementById("intensitas").innerText = data.intensitas || "-";
+          document.getElementById("hujan").innerText = data.hujan ? "Ya" : "Tidak";
+          document.getElementById("angin").innerText = data.angin_kmph?.toFixed(2) || "0";
+          document.getElementById("status").innerText = data.pendakian_tertutup ? "Tertutup" : "Terbuka";
+          document.getElementById("jumlah").innerText = data.jumlah_pelanggaran || "0";
+          document.getElementById("terakhir").innerText = data.pelanggaran_terakhir || "-";
+          document.getElementById("waktuRealtime").innerText = data.waktu || "-";
+          document.getElementById("tanggalRealtime").innerText = data.tanggal || "-";
+          loadingScreen.style.display = "none";
+          updateWeatherEffect(data);
+        }
+      });
+
+      function updateWeatherEffect(data) {
+        const sunny = document.getElementById("sunnyClouds");
+        const stars = document.getElementById("starEffect");
+        const rain = document.getElementById("rainEffect");
+
+        sunny.style.display = "none";
+        stars.style.display = "none";
+        rain.innerHTML = "";
+
+        const waktu = data.intensitas?.toLowerCase() || "siang";
+        const hujan = data.hujan === true;
+
+        if (hujan) {
+          for (let i = 0; i < 100; i++) {
+            const drop = document.createElement("div");
+            drop.className = "rain-drop";
+            drop.style.left = Math.random() * 100 + "vw";
+            drop.style.animationDuration = 0.5 + Math.random() * 0.5 + "s";
+            drop.style.opacity = 0.3 + Math.random() * 0.5;
+            rain.appendChild(drop);
+          }
+        }
+
+        if (waktu === "malam" && !hujan) {
+          stars.style.display = "block";
+        }
+
+        if (waktu === "siang" && !hujan) {
+          sunny.style.display = "block";
+        }
+
+        if (waktu === "malam" && hujan) {
+          stars.style.display = "block";
+        }
+      }
+
+      function showModal() {
+        const modal = document.getElementById("riwayatModal");
+        const riwayatList = document.getElementById("riwayatList");
+        riwayatList.innerHTML = "<li>Memuat data...</li>";
+        modal.style.display = "block";
+
+        db.ref("/riwayat_pelanggaran").once("value", (snapshot) => {
+          const riwayat = snapshot.val();
+          riwayatList.innerHTML = "";
+          if (riwayat) {
+            Object.values(riwayat).forEach((item, index) => {
+              const waktu = item.waktu || "-";
+              const keadaan = item.keadaan || "-";
+              riwayatList.innerHTML += `<li><strong>${index + 1}.</strong> ${waktu} - ${keadaan}</li>`;
+            });
+          } else {
+            riwayatList.innerHTML = "<li>Tidak ada pelanggaran.</li>";
+          }
+        });
+      }
+
+      function closeModal() {
+        document.getElementById("riwayatModal").style.display = "none";
+      }
+
+      function resetRiwayat() {
+        if (confirm("Apakah kamu yakin ingin menghapus seluruh riwayat pendaki ilegal?")) {
+          db.ref("/riwayat_pelanggaran").remove().then(() => {
+            alert("✅ Riwayat berhasil direset.");
+            document.getElementById("riwayatList").innerHTML = "<li>Tidak ada pelanggaran.</li>";
+          }).catch((error) => {
+            alert("❌ Gagal mereset riwayat: " + error.message);
+          });
+        }
+      }
+
+      window.onclick = function (event) {
+        const modal = document.getElementById("riwayatModal");
+        if (event.target == modal) modal.style.display = "none";
+      };
+    </script>
+  </body>
+</html>
